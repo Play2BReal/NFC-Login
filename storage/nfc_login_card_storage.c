@@ -2,6 +2,7 @@
 #include "../crypto/nfc_login_crypto.h"
 #include "../crypto/nfc_login_passcode.h"
 #include <storage/storage.h>
+#include <furi.h>
 #include <ctype.h>
 
 // Helper function to convert UID bytes to hex string
@@ -19,27 +20,62 @@ static bool parse_card_line(const char* line, NfcCard* card) {
     line_copy[sizeof(line_copy) - 1] = '\0';
     
     // Parse: name|uid_hex|password
-    char* name = strtok(line_copy, "|");
-    char* uid_hex = strtok(NULL, "|");
-    char* password = strtok(NULL, "");
+    // Use exact field sizes to minimize stack usage
+    char name[32] = {0};  // matches NfcCard.name size
+    char uid_hex[32] = {0};  // MAX_UID_LEN * 2 = 20, 32 is safe
+    char password[64] = {0};  // matches MAX_PASSWORD_LEN
     
-    if(password) {
-        // Strip any trailing newline leftovers/spaces
-        for(char* p = password; *p; ++p) {
-            if(*p == '\r' || *p == '\n') {
-                *p = '\0';
-                break;
+    uint8_t part = 0;
+    size_t part_start = 0;
+    
+    for(size_t i = 0; line_copy[i] != '\0' && line_copy[i] != '\n' && line_copy[i] != '\r'; i++) {
+        if(line_copy[i] == '|') {
+            // Copy current part
+            size_t part_len = i - part_start;
+            char* dest = NULL;
+            size_t dest_size = 0;
+            
+            if(part == 0) {
+                dest = name;
+                dest_size = sizeof(name);
+            } else if(part == 1) {
+                dest = uid_hex;
+                dest_size = sizeof(uid_hex);
             }
+            
+            if(dest && part_len < dest_size) {
+                strncpy(dest, &line_copy[part_start], part_len);
+                dest[part_len] = '\0';
+            }
+            
+            part_start = i + 1;
+            part++;
+            if(part >= 2) break; // Found uid_hex, next is password
         }
     }
     
-    if(name && uid_hex && password) {
+    // Copy last part (password)
+    if(part == 2) {
+        size_t part_len = strlen(&line_copy[part_start]);
+        // Strip trailing newline
+        while(part_len > 0 && (line_copy[part_start + part_len - 1] == '\r' || 
+                                line_copy[part_start + part_len - 1] == '\n')) {
+            part_len--;
+        }
+        if(part_len < sizeof(password)) {
+            strncpy(password, &line_copy[part_start], part_len);
+            password[part_len] = '\0';
+        }
+    }
+    
+    if(name[0] != '\0' && uid_hex[0] != '\0' && password[0] != '\0') {
         memset(card, 0, sizeof(NfcCard));
         strncpy(card->name, name, sizeof(card->name) - 1);
         strncpy(card->password, password, sizeof(card->password) - 1);
         
         // Parse hex UID
-        size_t uid_len = strlen(uid_hex) / 2;
+        size_t uid_hex_len = strlen(uid_hex);
+        size_t uid_len = uid_hex_len / 2;
         if(uid_len > 0 && uid_len <= MAX_UID_LEN) {
             card->uid_len = uid_len;
             for(size_t i = 0; i < uid_len; i++) {
@@ -50,6 +86,7 @@ static bool parse_card_line(const char* line, NfcCard* card) {
             return true;
         }
     }
+    
     return false;
 }
 
@@ -75,7 +112,7 @@ bool app_save_cards(App* app) {
     size_t plaintext_len = 0;
     for(size_t i = 0; i < app->card_count; i++) {
         char line[128];
-        char uid_hex[MAX_UID_LEN * 2 + 1] = {0};
+        char uid_hex[MAX_UID_LEN * 2 + 1];  // uid_to_hex null-terminates, no need to initialize
         
         uid_to_hex(app->cards[i].uid, app->cards[i].uid_len, uid_hex);
         
@@ -515,8 +552,9 @@ void app_load_cards(App* app) {
             }
             
             size_t line_len = line_end - line_start;
-            if(line_len > 0 && line_len < 256) {
-                char line[256];
+            // Use same buffer size as parse_card_line (128 bytes) to minimize stack usage
+            if(line_len > 0 && line_len < 128) {
+                char line[128];
                 memcpy(line, line_start, line_len);
                 line[line_len] = '\0';
                 
@@ -535,7 +573,7 @@ void app_load_cards(App* app) {
             line_start = line_end + 1;
         }
         
-        memset(plaintext, 0, 4096);
+        memset(plaintext, 0, plaintext_len);
         free(plaintext);
         
         FURI_LOG_I(TAG, "app_load_cards: Loaded %zu cards", app->card_count);
