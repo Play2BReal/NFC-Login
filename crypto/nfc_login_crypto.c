@@ -196,7 +196,6 @@ bool encrypt_data_with_passcode_sequence(const uint8_t* input, size_t input_len,
     free(padded_input);
 
     *output_len = padded_len;
-    FURI_LOG_D(TAG, "encrypt_data_with_passcode_sequence: Encrypted %zu bytes", padded_len);
     return true;
 }
 
@@ -271,6 +270,5 @@ bool decrypt_data_with_passcode_sequence(const uint8_t* input, size_t input_len,
         *output_len = input_len;
     }
 
-    FURI_LOG_D(TAG, "decrypt_data_with_passcode_sequence: Decrypted %zu bytes", *output_len);
     return true;
 }

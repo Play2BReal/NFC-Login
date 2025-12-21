@@ -9,18 +9,7 @@
 #include "scenes/cards/edit_callbacks.h"
 #include "scenes/settings/settings_scene.h"
 #include "scenes/settings/passcode_canvas.h"
-
-// Check if we're building for Momentum firmware
-#ifndef HAS_MOMENTUM_SUPPORT
-#ifdef FW_ORIGIN_Momentum
-#define HAS_MOMENTUM_SUPPORT
-#endif
-#endif
-
-
-
-
-// Submenu callbacks
+#include "cli/nfc_login_cli.h"
 
 // Main app
 int32_t nfc_login(void* p) {
@@ -58,27 +47,17 @@ int32_t nfc_login(void* p) {
     
     // Check if passcode is disabled for NFC Login app
     if(app->passcode_disabled) {
-        // Passcode disabled - load cards and start normally
-        FURI_LOG_I(TAG, "nfc_login: Passcode disabled, loading cards directly");
         app_load_cards(app);
-        FURI_LOG_I(TAG, "nfc_login: Loaded %zu cards", app->card_count);
         app_switch_to_view(app, ViewSubmenu);
     } else {
-        // Check if passcode is set
         bool has_passcode_set = has_passcode();
-        FURI_LOG_I(TAG, "nfc_login: Passcode set: %s", has_passcode_set ? "true" : "false");
-        
         if(has_passcode_set) {
-            // Show lockscreen to verify passcode
-            FURI_LOG_I(TAG, "nfc_login: Showing lockscreen");
             app->passcode_prompt_active = true;
             app->passcode_sequence_len = 0;
             memset(app->passcode_sequence, 0, sizeof(app->passcode_sequence));
             app->widget_state = 7; // Lockscreen state
             app_switch_to_view(app, ViewPasscodeCanvas);
         } else {
-            // No passcode set - show setup prompt on first boot
-            FURI_LOG_I(TAG, "nfc_login: No passcode set, showing setup prompt");
             app->passcode_prompt_active = true;
             app->passcode_sequence_len = 0;
             memset(app->passcode_sequence, 0, sizeof(app->passcode_sequence));
@@ -87,8 +66,16 @@ int32_t nfc_login(void* p) {
         }
     }
     
+    // Register CLI commands (like TOTP does - after app initialization)
+    nfc_login_cli_register_commands(app);
+    nfc_login_cli_set_app_instance(app);
+    
     // Run dispatcher
     view_dispatcher_run(app->view_dispatcher);
+    
+    // Unregister CLI commands before cleanup (like TOTP does)
+    nfc_login_cli_unregister_commands();
+    nfc_login_cli_clear_app_instance();
     
     // Cleanup
     if(app->scanning) {

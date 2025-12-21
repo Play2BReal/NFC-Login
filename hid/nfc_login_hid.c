@@ -38,7 +38,6 @@ static Bt* g_bt_service = NULL;
 static bool furi_hal_bt_hid_start(void) {
     // If already started, just return true
     if(g_ble_hid_profile && g_bt_service) {
-        FURI_LOG_D(TAG, "BLE HID already started");
         return true;
     }
     
@@ -64,14 +63,11 @@ static bool furi_hal_bt_hid_start(void) {
         return false;
     }
     
-    FURI_LOG_I(TAG, "BLE HID profile started");
-    
     // Give profile time to initialize
     furi_delay_ms(100);
     
     // Start advertising - device should appear as "Control <Flipper Name>"
     furi_hal_bt_start_advertising();
-    FURI_LOG_I(TAG, "BLE advertising started");
     
     // Give advertising time to start
     furi_delay_ms(100);
@@ -278,8 +274,6 @@ uint32_t app_type_password(App* app, const char* password) {
 
 void app_start_ble_advertising(void) {
     #if HAS_BLE_HID_API
-    FURI_LOG_I(TAG, "Starting BLE HID advertising");
-    
     if(!g_bt_service) {
         g_bt_service = furi_record_open(RECORD_BT);
         if(!g_bt_service) {
@@ -300,14 +294,11 @@ void app_start_ble_advertising(void) {
         return;
     }
     
-    FURI_LOG_I(TAG, "BLE HID profile started");
-    
     // Give profile time to initialize
     furi_delay_ms(100);
     
     // Start advertising
     furi_hal_bt_start_advertising();
-    FURI_LOG_I(TAG, "BLE advertising started - device should appear as 'Control <Flipper Name>'");
     
     // Give advertising time to start
     furi_delay_ms(100);
@@ -318,8 +309,6 @@ void app_start_ble_advertising(void) {
 
 void app_stop_ble_advertising(void) {
     #if HAS_BLE_HID_API
-    FURI_LOG_I(TAG, "Stopping BLE HID advertising");
-    
     if(g_bt_service) {
         bt_disconnect(g_bt_service);
         furi_delay_ms(200);
@@ -336,7 +325,5 @@ void app_stop_ble_advertising(void) {
         furi_record_close(RECORD_BT);
         g_bt_service = NULL;
     }
-    
-    FURI_LOG_I(TAG, "BLE HID advertising stopped");
     #endif
 }

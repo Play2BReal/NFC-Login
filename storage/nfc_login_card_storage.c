@@ -96,7 +96,6 @@ void app_ensure_data_dir(Storage* storage) {
 
 // Save cards - COMPLETE SEPARATION: crypto first, then file I/O
 bool app_save_cards(App* app) {
-    FURI_LOG_I(TAG, "app_save_cards: Starting save for %zu cards", app->card_count);
     
     // PHASE 1: Build plaintext data (no storage, no crypto)
     size_t estimated_size = app->card_count * 256;
@@ -123,7 +122,6 @@ bool app_save_cards(App* app) {
             plaintext_len += written;
         }
     }
-    FURI_LOG_D(TAG, "app_save_cards: Built plaintext, length=%zu", plaintext_len);
     
     // PHASE 2: Encrypt data (PURE CRYPTO, NO STORAGE)
     uint8_t* encrypted = NULL;
@@ -139,13 +137,10 @@ bool app_save_cards(App* app) {
             return false;
         }
         
-        FURI_LOG_D(TAG, "app_save_cards: Encrypting %zu bytes", plaintext_len);
-        
         // Use passcode-based encryption if passcode exists, otherwise use hardware encryption
         if(has_passcode()) {
             char passcode_sequence[MAX_PASSCODE_SEQUENCE_LEN];
             if(get_passcode_sequence(passcode_sequence, sizeof(passcode_sequence))) {
-                FURI_LOG_D(TAG, "app_save_cards: Using passcode-based encryption");
                 encryption_success = encrypt_data_with_passcode_sequence(
                     (uint8_t*)plaintext, plaintext_len, encrypted, &encrypted_len,
                     passcode_sequence
@@ -156,7 +151,6 @@ bool app_save_cards(App* app) {
                 encryption_success = encrypt_data((uint8_t*)plaintext, plaintext_len, encrypted, &encrypted_len);
             }
         } else {
-            FURI_LOG_D(TAG, "app_save_cards: No passcode set, using hardware encryption");
             encryption_success = encrypt_data((uint8_t*)plaintext, plaintext_len, encrypted, &encrypted_len);
         }
         
@@ -168,8 +162,6 @@ bool app_save_cards(App* app) {
             free(encrypted);
             return false;
         }
-        
-        FURI_LOG_D(TAG, "app_save_cards: Encryption successful, encrypted_len=%zu", encrypted_len);
         
         // Cleanup plaintext immediately after encryption
         memset(plaintext, 0, estimated_size);
@@ -220,7 +212,6 @@ bool app_save_cards(App* app) {
     File* read_file = storage_file_alloc(storage);
     if(storage_file_open(read_file, NFC_CARDS_FILE_ENC, FSAM_READ, FSOM_OPEN_EXISTING)) {
         size_t file_size = storage_file_size(read_file);
-        FURI_LOG_D(TAG, "app_save_cards: Reading existing file, size: %zu", file_size);
         
         if(file_size >= PASSCODE_HEADER_SIZE) {
             // Read entire file into memory
@@ -229,7 +220,6 @@ bool app_save_cards(App* app) {
                 size_t bytes_read = storage_file_read(read_file, file_data, file_size);
                 if(bytes_read == file_size) {
                     uint16_t passcode_len = (uint16_t)(file_data[0] | (file_data[1] << 8));
-                    FURI_LOG_D(TAG, "app_save_cards: Existing passcode length: %u", passcode_len);
                     
                     if(passcode_len > 0 && passcode_len < 512) {
                         passcode_header = malloc(PASSCODE_HEADER_SIZE + passcode_len);
@@ -309,11 +299,9 @@ bool app_save_cards(App* app) {
         }
         
         // Write encrypted card data
-        FURI_LOG_D(TAG, "app_save_cards: Writing %zu encrypted bytes", encrypted_len);
         size_t written = storage_file_write(file, encrypted, encrypted_len);
         if(written == encrypted_len) {
             success = true;
-            FURI_LOG_I(TAG, "app_save_cards: Successfully saved %zu cards (encrypted)", app->card_count);
         } else {
             FURI_LOG_E(TAG, "app_save_cards: Write failed: %zu/%zu bytes", written, encrypted_len);
         }
@@ -326,7 +314,6 @@ bool app_save_cards(App* app) {
             storage_file_write(file, header, 2);
         }
         success = true;
-        FURI_LOG_I(TAG, "app_save_cards: Created empty encrypted file");
     }
     
     if(passcode_header) {
@@ -393,7 +380,6 @@ void app_load_cards(App* app) {
         }
         
         uint16_t passcode_len = (uint16_t)(length_bytes[0] | (length_bytes[1] << 8));
-        FURI_LOG_D(TAG, "app_load_cards: Passcode header length: %u", passcode_len);
         
         // Read entire file into memory to avoid seek issues
         uint8_t* file_data = malloc(file_size);
@@ -468,7 +454,6 @@ void app_load_cards(App* app) {
         
         encrypted_len = cards_data_size;
         file_read_success = true;
-        FURI_LOG_D(TAG, "app_load_cards: Read %zu encrypted bytes (skipped %u byte passcode header)", encrypted_len, passcode_len);
     } else {
         // No encrypted file yet: treat as empty (allow first save to create it)
         storage_file_close(file);
@@ -495,23 +480,18 @@ void app_load_cards(App* app) {
         if(has_passcode()) {
             char passcode_sequence[MAX_PASSCODE_SEQUENCE_LEN];
             if(get_passcode_sequence(passcode_sequence, sizeof(passcode_sequence))) {
-                FURI_LOG_I(TAG, "app_load_cards: Trying passcode-based decryption (%zu bytes)", encrypted_len);
                 decrypt_success = decrypt_data_with_passcode_sequence(
                     encrypted, encrypted_len, (uint8_t*)plaintext, &plaintext_len,
                     passcode_sequence
                 );
                 memset(passcode_sequence, 0, sizeof(passcode_sequence));
                 
-                if(decrypt_success) {
-                    FURI_LOG_I(TAG, "app_load_cards: Passcode decryption successful, plaintext_len=%zu", plaintext_len);
-                } else {
+                if(!decrypt_success) {
                     FURI_LOG_W(TAG, "app_load_cards: Passcode decryption failed, trying hardware decryption");
                 }
             } else {
                 FURI_LOG_W(TAG, "app_load_cards: Passcode exists but failed to get sequence, trying hardware decryption");
             }
-        } else {
-            FURI_LOG_D(TAG, "app_load_cards: No passcode set, using hardware decryption");
         }
         
         // Fall back to hardware decryption if passcode decryption failed or no passcode
@@ -525,7 +505,6 @@ void app_load_cards(App* app) {
                 return;
             }
             
-            FURI_LOG_D(TAG, "app_load_cards: Decrypting %zu bytes with hardware key", encrypted_len);
             decrypt_success = decrypt_data(encrypted, encrypted_len, (uint8_t*)plaintext, &plaintext_len);
         }
         
@@ -539,8 +518,6 @@ void app_load_cards(App* app) {
             free(plaintext);
             return;
         }
-        
-        FURI_LOG_D(TAG, "app_load_cards: Decryption successful, plaintext_len=%zu", plaintext_len);
         furi_delay_ms(STORAGE_READ_DELAY_MS);
         
         // PHASE 3: Parse plaintext (NO CRYPTO, NO STORAGE)
@@ -576,14 +553,12 @@ void app_load_cards(App* app) {
         memset(plaintext, 0, plaintext_len);
         free(plaintext);
         
-        FURI_LOG_I(TAG, "app_load_cards: Loaded %zu cards", app->card_count);
     }
     
     // Validate and restore last selected card if it was saved
     if(app->active_card_index < app->card_count && app->card_count > 0) {
         app->has_active_selection = true;
         app->selected_card = app->active_card_index;
-        FURI_LOG_I(TAG, "app_load_cards: Restored active card index %zu", app->active_card_index);
     } else if(app->active_card_index > 0) {
         // Index was saved but card no longer exists - clear selection
         app->has_active_selection = false;

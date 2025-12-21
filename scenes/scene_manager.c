@@ -396,7 +396,6 @@ bool app_widget_view_input_handler(InputEvent* event, void* context) {
                     app_load_cards(app);
                     size_t cards_loaded = app->card_count;
                     
-                    FURI_LOG_I(TAG, "app_widget_view_input: Reset passcode - loaded %zu cards (hardware-encrypted can be preserved)", cards_loaded);
                     
                     // Delete file to reset passcode
                     delete_cards_and_reset_passcode();
@@ -689,16 +688,13 @@ bool app_widget_view_input_handler(InputEvent* event, void* context) {
                         
                         // If cards were preserved in memory (from reset), save them now with new passcode
                         if(app->card_count > 0) {
-                            FURI_LOG_I(TAG, "app_widget_view_input: Saving %zu preserved cards with new passcode", app->card_count);
                             if(app_save_cards(app)) {
-                                FURI_LOG_I(TAG, "app_widget_view_input: Successfully saved preserved cards");
                             } else {
                                 FURI_LOG_E(TAG, "app_widget_view_input: Failed to save preserved cards");
                             }
                         } else {
                             // Load cards (will use passcode encryption if cards exist)
                             app_load_cards(app);
-                            FURI_LOG_I(TAG, "app_widget_view_input: Loaded %zu cards after passcode setup", app->card_count);
                         }
                         
                         // Clear passcode sequence and reset state

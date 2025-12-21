@@ -104,16 +104,11 @@ void app_text_input_result_callback(void* context) {
             view_dispatcher_switch_to_view(app->view_dispatcher, ViewSubmenu);
         }
     } else if(app->enrollment_state == EnrollmentStatePassword) {
-        FURI_LOG_I(TAG, "app_text_input_result_callback: Password entered, password_len=%zu, uid_len=%zu",
-                   strlen(app->enrollment_card.password), app->enrollment_card.uid_len);
         if(strlen(app->enrollment_card.password) > 0 && app->enrollment_card.uid_len > 0) {
             if(app->card_count < MAX_CARDS) {
-                FURI_LOG_D(TAG, "app_text_input_result_callback: Adding card %zu to array", app->card_count);
                 memcpy(&app->cards[app->card_count], &app->enrollment_card, sizeof(NfcCard));
                 app->card_count++;
-                FURI_LOG_D(TAG, "app_text_input_result_callback: Card added, calling app_save_cards");
                 if(app_save_cards(app)) {
-                    FURI_LOG_I(TAG, "app_text_input_result_callback: Save successful");
                     notification_message(app->notification, &sequence_success);
                 } else {
                     FURI_LOG_E(TAG, "app_text_input_result_callback: Save failed, removing card");

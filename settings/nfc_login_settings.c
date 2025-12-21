@@ -68,14 +68,17 @@ void app_load_keyboard_layout(App* app) {
         snprintf(layout_path, sizeof(layout_path), "%s/%s", BADUSB_LAYOUTS_DIR, app->keyboard_layout);
 
         Storage* storage = furi_record_open(RECORD_STORAGE);
+        if(storage) {
         File* file = storage_file_alloc(storage);
-
+            if(file) {
         if(storage_file_open(file, layout_path, FSAM_READ, FSOM_OPEN_EXISTING)) {
             storage_file_read(file, app->layout, sizeof(app->layout));
             storage_file_close(file);
         }
         storage_file_free(file);
+            }
         furi_record_close(RECORD_STORAGE);
+        }
     }
 }
 
@@ -127,7 +130,15 @@ void app_load_settings(App* app) {
     #endif
 
     Storage* storage = furi_record_open(RECORD_STORAGE);
+    if(!storage) {
+        return;
+    }
+    
     File* file = storage_file_alloc(storage);
+    if(!file) {
+        furi_record_close(RECORD_STORAGE);
+        return;
+    }
 
     if(storage_file_open(file, NFC_SETTINGS_FILE, FSAM_READ, FSOM_OPEN_EXISTING)) {
         char line[128];

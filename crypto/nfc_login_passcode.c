@@ -95,7 +95,6 @@ bool get_passcode_sequence(char* sequence_out, size_t sequence_buf_size) {
                                     memcpy(sequence_out, decrypted, decrypted_len);
                                     sequence_out[decrypted_len] = '\0';
                                     success = true;
-                                    FURI_LOG_D(TAG, "get_passcode_sequence: Decrypted passcode (%zu bytes)", decrypted_len);
                                 } else {
                                     FURI_LOG_E(TAG, "get_passcode_sequence: Decrypted passcode too large");
                                 }
@@ -114,18 +113,15 @@ bool get_passcode_sequence(char* sequence_out, size_t sequence_buf_size) {
                         free(encrypted);
                     }
                 } else if(passcode_len == 0) {
-                    FURI_LOG_D(TAG, "get_passcode_sequence: No passcode stored (length is 0)");
                 } else {
                     FURI_LOG_E(TAG, "get_passcode_sequence: Invalid passcode length: %u", passcode_len);
                 }
             }
         } else {
-            FURI_LOG_D(TAG, "get_passcode_sequence: File too small, no passcode header");
         }
         
         storage_file_close(file);
     } else {
-        FURI_LOG_D(TAG, "get_passcode_sequence: Cards file does not exist or cannot be opened");
     }
     
     storage_file_free(file);
@@ -150,7 +146,6 @@ bool set_passcode_sequence(const char* sequence) {
     }
     
     // Ensure crypto key is initialized before encryption
-    FURI_LOG_D(TAG, "set_passcode_sequence: Ensuring crypto key");
     if(!ensure_crypto_key()) {
         FURI_LOG_E(TAG, "set_passcode_sequence: Failed to ensure crypto key");
         return false;
@@ -169,14 +164,12 @@ bool set_passcode_sequence(const char* sequence) {
         return false;
     }
     
-    FURI_LOG_I(TAG, "set_passcode_sequence: Starting encryption (%zu bytes)", seq_len);
     bool encrypt_success = encrypt_data((const uint8_t*)sequence, seq_len, encrypted, &encrypted_len);
     if(!encrypt_success) {
         FURI_LOG_E(TAG, "set_passcode_sequence: Failed to encrypt passcode");
         free(encrypted);
         return false;
     }
-    FURI_LOG_I(TAG, "set_passcode_sequence: Encryption successful (%zu bytes)", encrypted_len);
     
     // Save to cards.enc file header
     Storage* storage = furi_record_open(RECORD_STORAGE);
@@ -190,14 +183,12 @@ bool set_passcode_sequence(const char* sequence) {
     app_ensure_data_dir(storage);
     
     // Read existing cards.enc to preserve card data (read entire file into memory)
-    FURI_LOG_D(TAG, "set_passcode_sequence: Reading existing cards file");
     File* read_file = storage_file_alloc(storage);
     uint8_t* existing_cards = NULL;
     size_t existing_cards_len = 0;
     
     if(storage_file_open(read_file, NFC_CARDS_FILE_ENC, FSAM_READ, FSOM_OPEN_EXISTING)) {
         size_t file_size = storage_file_size(read_file);
-        FURI_LOG_D(TAG, "set_passcode_sequence: Existing file size: %zu", file_size);
         
         if(file_size >= PASSCODE_HEADER_SIZE) {
             // Read entire file
@@ -207,7 +198,6 @@ bool set_passcode_sequence(const char* sequence) {
                 if(bytes_read == file_size) {
                     // Parse header
                     uint16_t old_passcode_len = (uint16_t)(file_data[0] | (file_data[1] << 8));
-                    FURI_LOG_D(TAG, "set_passcode_sequence: Old passcode length: %u", old_passcode_len);
                     
                     // Extract card data (skip header and old passcode)
                     size_t card_data_offset = PASSCODE_HEADER_SIZE + old_passcode_len;
@@ -217,7 +207,6 @@ bool set_passcode_sequence(const char* sequence) {
                             existing_cards = malloc(existing_cards_len);
                             if(existing_cards) {
                                 memcpy(existing_cards, file_data + card_data_offset, existing_cards_len);
-                                FURI_LOG_D(TAG, "set_passcode_sequence: Preserving %zu bytes of card data", existing_cards_len);
                             }
                         }
                     }
@@ -227,11 +216,9 @@ bool set_passcode_sequence(const char* sequence) {
                 free(file_data);
             }
         } else {
-            FURI_LOG_D(TAG, "set_passcode_sequence: File too small or new, no existing cards");
         }
         storage_file_close(read_file);
     } else {
-        FURI_LOG_D(TAG, "set_passcode_sequence: No existing cards file (new file)");
     }
     storage_file_free(read_file);
     
@@ -239,7 +226,6 @@ bool set_passcode_sequence(const char* sequence) {
     File* write_file = storage_file_alloc(storage);
     bool success = false;
     
-    FURI_LOG_D(TAG, "set_passcode_sequence: Opening cards file for writing");
     if(storage_file_open(write_file, NFC_CARDS_FILE_ENC, FSAM_WRITE, FSOM_CREATE_ALWAYS)) {
         // Write passcode length (2 bytes, little-endian)
         uint8_t length_bytes[2];
@@ -248,19 +234,16 @@ bool set_passcode_sequence(const char* sequence) {
         storage_file_write(write_file, length_bytes, 2);
         
         // Write encrypted passcode
-        FURI_LOG_D(TAG, "set_passcode_sequence: Writing encrypted passcode (%zu bytes)", encrypted_len);
         size_t written = storage_file_write(write_file, encrypted, encrypted_len);
         
         if(written == encrypted_len) {
             // Write existing card data if any
             if(existing_cards && existing_cards_len > 0) {
-                FURI_LOG_D(TAG, "set_passcode_sequence: Preserving existing card data (%zu bytes)", existing_cards_len);
                 storage_file_write(write_file, existing_cards, existing_cards_len);
             }
             
             storage_file_close(write_file);
             success = true;
-            FURI_LOG_I(TAG, "set_passcode_sequence: Saved encrypted passcode to cards file header");
         } else {
             FURI_LOG_E(TAG, "set_passcode_sequence: Write failed: %zu/%zu bytes", written, encrypted_len);
             storage_file_close(write_file);
@@ -328,7 +311,6 @@ bool delete_cards_and_reset_passcode(void) {
     furi_record_close(RECORD_STORAGE);
     
     if(error == FSE_OK || error == FSE_NOT_EXIST) {
-        FURI_LOG_I(TAG, "delete_cards_and_reset_passcode: Successfully deleted cards.enc");
         return true;
     } else {
         FURI_LOG_E(TAG, "delete_cards_and_reset_passcode: Failed to delete cards.enc (error: %d)", error);
@@ -337,8 +319,6 @@ bool delete_cards_and_reset_passcode(void) {
 }
 
 bool reset_passcode_preserve_cards(void) {
-    FURI_LOG_I(TAG, "reset_passcode_preserve_cards: Attempting to reset passcode while preserving cards");
-    
     // Create a temporary App structure to load cards
     // We'll try to load cards with hardware decryption (bypassing passcode check)
     App temp_app = {0};
@@ -348,7 +328,6 @@ bool reset_passcode_preserve_cards(void) {
     app_load_cards(&temp_app);
     
     size_t cards_preserved = temp_app.card_count;
-    FURI_LOG_I(TAG, "reset_passcode_preserve_cards: Loaded %zu cards (will preserve if hardware-encrypted)", cards_preserved);
     
     // Delete the file to reset passcode
     bool delete_success = delete_cards_and_reset_passcode();
@@ -362,7 +341,6 @@ bool reset_passcode_preserve_cards(void) {
     if(cards_preserved > 0) {
         // Copy cards to a proper App structure for saving
         // Note: This is a simplified approach - in practice, we'd need the full App context
-        FURI_LOG_I(TAG, "reset_passcode_preserve_cards: Cards were hardware-encrypted and can be preserved");
         FURI_LOG_W(TAG, "reset_passcode_preserve_cards: Note: Cards will need to be re-saved after new passcode is set");
         // Cards are preserved in temp_app, but we can't save them here without full App context
         // The caller should handle saving after setting new passcode
@@ -451,6 +429,5 @@ bool derive_key_from_passcode_sequence(const char* sequence, uint8_t* key_out, s
     memset(hash_input, 0, PASSCODE_HASH_SIZE);
     memset(hash_output, 0, PASSCODE_HASH_SIZE);
     
-    FURI_LOG_D(TAG, "derive_key_from_passcode_sequence: Derived %zu byte key", key_len);
     return true;
 }

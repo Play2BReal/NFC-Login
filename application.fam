@@ -3,7 +3,7 @@ App(
     name="NFC PC Login",
     apptype=FlipperAppType.EXTERNAL,
     entry_point="nfc_login",
-    requires=["gui", "usb_hid", "storage", "notification", "bt"],
+    requires=["gui", "usb_hid", "storage", "notification", "bt", "cli"],
     fap_libs=["ble_profile", "assets"],
     fap_icon_assets="icons",
     fap_icon_assets_symbol="nfc_login",
