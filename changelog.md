@@ -1,3 +1,8 @@
+v1.1.1:
+Code cleanup and optimizations
+- **Code cleanup**: Removed redundant comments, debug logs, and unused code
+- **Code optimizations**: Refactored duplicate code into helper functions, improved maintainability
+
 v1.1.0:
 Major code refactoring and modularization + BLE HID support
 - **NEW: BLE HID Support**: Added Bluetooth Low Energy HID keyboard mode
