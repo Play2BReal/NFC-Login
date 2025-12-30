@@ -571,8 +571,7 @@ bool app_widget_view_input_handler(InputEvent* event, void* context) {
                         furi_delay_ms(100);
                         
                         if(app->card_count > 0) {
-                            if(app_save_cards(app)) {
-                            } else {
+                            if(!app_save_cards(app)) {
                                 FURI_LOG_E(TAG, "app_widget_view_input: Failed to save preserved cards");
                             }
                         } else {
