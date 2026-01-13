@@ -35,7 +35,7 @@ int32_t nfc_login(void* p) {
     app->passcode_failed_attempts = 0;
     memset(app->passcode_sequence, 0, sizeof(app->passcode_sequence));
     
-    if(app->passcode_disabled) {
+    if(get_passcode_disabled()) {
         app_load_cards(app);
         app_switch_to_view(app, ViewSubmenu);
     } else {
