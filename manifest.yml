@@ -10,7 +10,7 @@ sourcecode:
   type: git
   location:
     origin: https://github.com/Play2BReal/NFC-Login
-    commit_sha: 8950503d85c1081e30791362b388d0dd7317a7c8
+    commit_sha: 19abaa9da088ad5536508d2a570699cfe79fe768
 
 # short_description can also come from fap_description in application.fam
 short_description: NFC based desktop login using USB HID or BLE HID
