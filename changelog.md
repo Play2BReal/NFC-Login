@@ -7,7 +7,7 @@ v1.1.0:
 Major code refactoring and modularization + BLE HID support
 - **NEW: BLE HID Support**: Added Bluetooth Low Energy HID keyboard mode
   - Switch between USB and BLE HID modes in settings
-  - BLE device advertises as "Control <Flipper Name>"
+  - BLE device advertises as **Control (Flipper Name)**
   - Works on iOS, Android, and PC devices
   - BLE advertising starts immediately when BLE mode is selected
   - Compatible with both Official and Momentum firmware
