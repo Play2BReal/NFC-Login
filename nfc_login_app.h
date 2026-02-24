@@ -23,12 +23,19 @@
 #include <nfc/protocols/iso14443_3a/iso14443_3a.h>
 #include <nfc/protocols/iso14443_3a/iso14443_3a_poller.h>
 #include <nfc/protocols/iso14443_3a/iso14443_3a_poller_sync.h>
-#if defined(__has_include) && __has_include(<assets_icons.h>)
-#include <assets_icons.h>
-#elif defined(__has_include) && __has_include(<nfc_login_icons.h>)
-#include <nfc_login_icons.h>
+#if defined(__has_include)
+    #if __has_include(<nfc_login_icons.h>)
+        // Prefer app-specific icon pack when available (extapps / OFW)
+        #include <nfc_login_icons.h>
+    #elif __has_include(<assets_icons.h>)
+        // Fallback to firmware-wide assets (e.g. Momentum)
+        #include <assets_icons.h>
+    #else
+        #error "Icon assets header not found. Need nfc_login_icons.h (extapps) or assets_icons.h (Momentum)."
+    #endif
 #else
-#error "Icon assets header not found. Need assets_icons.h (Momentum) or nfc_login_icons.h (official uFBT)."
+    // Conservative fallback: expect extapp-generated header
+    #include <nfc_login_icons.h>
 #endif
 #include <string.h>
 #include <stdlib.h>

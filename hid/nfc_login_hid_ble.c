@@ -77,7 +77,6 @@ void ble_hid_deinit(void) {
         g_bt_service = NULL;
     }
     
-    furi_hal_bt_stop_advertising();
     g_ble_is_connected = false;
 }
 

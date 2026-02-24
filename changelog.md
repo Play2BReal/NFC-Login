@@ -1,3 +1,8 @@
+v1.1.2:
+BLE cleanup and OFW compatibility fixes
+- **Fix**: Properly restore the original BLE profile on app exit so the Flipper reconnects without toggling Bluetooth
+- **Fix**: Adjusted icon include logic to build cleanly on Official Firmware while still supporting Momentum assets
+
 v1.1.1:
 Code cleanup and optimizations
 - **Code cleanup**: Removed redundant comments, debug logs, and unused code
