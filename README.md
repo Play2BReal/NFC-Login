@@ -53,6 +53,10 @@ On first launch, you'll be prompted to set a passcode (unless you disable it in 
 3. The password will be automatically typed via USB or BLE (depending on your selected mode)
 4. Press Back to stop scanning
 
+**Active Scan** (Settings):
+- **ON** (default): field stays on while the scan screen is open
+- **OFF**: press **OK** each time to pulse the field (~1s) for a UID read; field stays off between presses
+
 **Note**: If using BLE mode, pair your device to the Flipper first. It will appear as **Control (Flipper Name)** in Bluetooth settings.
 
 ## Selecting a Specific Card

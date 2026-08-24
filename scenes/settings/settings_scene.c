@@ -129,16 +129,18 @@ void app_render_settings(App* app) {
              (app->settings_menu_index == 2) ? ">" : " ", app->input_delay_ms);
     snprintf(setting_lines[3], sizeof(setting_lines[3]), "%s Append Enter: %s",
              (app->settings_menu_index == 3) ? ">" : " ", app->append_enter ? "ON" : "OFF");
-    snprintf(setting_lines[4], sizeof(setting_lines[4]), "%s Reset Passcode",
-             (app->settings_menu_index == 4) ? ">" : " ");
-    snprintf(setting_lines[5], sizeof(setting_lines[5]), "%s Disable Passcode: %s",
-             (app->settings_menu_index == 5) ? ">" : " ", get_passcode_disabled() ? "ON" : "OFF");
-    snprintf(setting_lines[6], sizeof(setting_lines[6]), "%s Sound: %s",
-             (app->settings_menu_index == 6) ? ">" : " ", app->sound_enabled ? "ON" : "OFF");
-    snprintf(setting_lines[7], sizeof(setting_lines[7]), "%s Vibro: %s",
-             (app->settings_menu_index == 7) ? ">" : " ", app->vibro_enabled ? "ON" : "OFF");
-    snprintf(setting_lines[8], sizeof(setting_lines[8]), "%s Credits",
-             (app->settings_menu_index == 8) ? ">" : " ");
+    snprintf(setting_lines[4], sizeof(setting_lines[4]), "%s Active Scan: %s",
+             (app->settings_menu_index == 4) ? ">" : " ", app->active_scan ? "ON" : "OFF");
+    snprintf(setting_lines[5], sizeof(setting_lines[5]), "%s Reset Passcode",
+             (app->settings_menu_index == 5) ? ">" : " ");
+    snprintf(setting_lines[6], sizeof(setting_lines[6]), "%s Disable Passcode: %s",
+             (app->settings_menu_index == 6) ? ">" : " ", get_passcode_disabled() ? "ON" : "OFF");
+    snprintf(setting_lines[7], sizeof(setting_lines[7]), "%s Sound: %s",
+             (app->settings_menu_index == 7) ? ">" : " ", app->sound_enabled ? "ON" : "OFF");
+    snprintf(setting_lines[8], sizeof(setting_lines[8]), "%s Vibro: %s",
+             (app->settings_menu_index == 8) ? ">" : " ", app->vibro_enabled ? "ON" : "OFF");
+    snprintf(setting_lines[9], sizeof(setting_lines[9]), "%s Credits",
+             (app->settings_menu_index == 9) ? ">" : " ");
 
     for(uint8_t i = 0; i < SETTINGS_VISIBLE_ITEMS; i++) {
         uint8_t item_index = app->settings_scroll_offset + i;
@@ -156,14 +158,16 @@ void app_render_settings(App* app) {
     } else if(app->settings_menu_index == 3) {
         widget_add_string_element(app->widget, 0, SETTINGS_HELP_Y_POS, AlignLeft, AlignTop, FontSecondary, "OK=Toggle  Back=Menu");
     } else if(app->settings_menu_index == 4) {
-        widget_add_string_element(app->widget, 0, SETTINGS_HELP_Y_POS, AlignLeft, AlignTop, FontSecondary, "OK=Reset  Back=Menu");
-    } else if(app->settings_menu_index == 5) {
-        widget_add_string_element(app->widget, 0, SETTINGS_HELP_Y_POS, AlignLeft, AlignTop, FontSecondary, "<-> Toggle  Back=Menu");
-    } else if(app->settings_menu_index == 6) {
         widget_add_string_element(app->widget, 0, SETTINGS_HELP_Y_POS, AlignLeft, AlignTop, FontSecondary, "OK=Toggle  Back=Menu");
+    } else if(app->settings_menu_index == 5) {
+        widget_add_string_element(app->widget, 0, SETTINGS_HELP_Y_POS, AlignLeft, AlignTop, FontSecondary, "OK=Reset  Back=Menu");
+    } else if(app->settings_menu_index == 6) {
+        widget_add_string_element(app->widget, 0, SETTINGS_HELP_Y_POS, AlignLeft, AlignTop, FontSecondary, "<-> Toggle  Back=Menu");
     } else if(app->settings_menu_index == 7) {
         widget_add_string_element(app->widget, 0, SETTINGS_HELP_Y_POS, AlignLeft, AlignTop, FontSecondary, "OK=Toggle  Back=Menu");
     } else if(app->settings_menu_index == 8) {
+        widget_add_string_element(app->widget, 0, SETTINGS_HELP_Y_POS, AlignLeft, AlignTop, FontSecondary, "OK=Toggle  Back=Menu");
+    } else if(app->settings_menu_index == 9) {
         widget_add_string_element(app->widget, 0, SETTINGS_HELP_Y_POS, AlignLeft, AlignTop, FontSecondary, "OK=View  Back=Menu");
     }
 }

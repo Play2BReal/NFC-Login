@@ -1,3 +1,11 @@
+v1.1.3:
+Active Scan setting
+- **NEW**: Settings → Active Scan ON/OFF (persisted in settings.txt)
+  - ON (default): Start Scan keeps the NFC field up (previous behavior)
+  - OFF: Start Scan waits for OK; field on ~1s to read UID, then off until next OK
+- Scan screen copy updates for passive mode ("Press OK to scan")
+- Version bump to 1.1.3
+
 v1.1.2:
 BLE cleanup and OFW compatibility fixes
 - **Fix**: Properly restore the original BLE profile on app exit so the Flipper reconnects without toggling Bluetooth
